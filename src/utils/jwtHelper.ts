@@ -1,129 +1,49 @@
-import jwt from 'jsonwebtoken';
-import { UserRole } from '../models/User';
+import jwt, { SignOptions } from 'jsonwebtoken';
 
 export interface JwtPayload {
-  userId: number;
+  userId: number;   // ← string se number kiya
   email: string;
-  role: UserRole;
+  role: string;
 }
 
-export interface TokenPair {
+export interface TokenPair {   // ← export add kiya
   accessToken: string;
   refreshToken: string;
 }
 
-class JwtHelper {
-  private accessTokenSecret: string;
-  private refreshTokenSecret: string;
-  private accessTokenExpiry: string;
-  private refreshTokenExpiry: string;
+const generateAccessToken = (payload: JwtPayload): string => {
+  const options: SignOptions = {
+    expiresIn: (process.env.JWT_ACCESS_EXPIRES_IN || '15m') as SignOptions['expiresIn'],
+  };
+  return jwt.sign(payload, process.env.JWT_ACCESS_SECRET as string, options);
+};
 
-  constructor() {
-    this.accessTokenSecret = process.env.JWT_SECRET || 'your-secret-key';
-    this.refreshTokenSecret = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret';
-    this.accessTokenExpiry = process.env.JWT_EXPIRES_IN || '24h';
-    this.refreshTokenExpiry = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
+const generateRefreshToken = (payload: JwtPayload): string => {
+  const options: SignOptions = {
+    expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '7d') as SignOptions['expiresIn'],
+  };
+  return jwt.sign(payload, process.env.JWT_REFRESH_SECRET as string, options);
+};
 
-    if (this.accessTokenSecret.length < 32) {
-      throw new Error('JWT_SECRET must be at least 32 characters long');
-    }
-  }
+const verifyAccessToken = (token: string): JwtPayload => {
+  return jwt.verify(token, process.env.JWT_ACCESS_SECRET as string) as JwtPayload;
+};
 
-  /**
-   * Generate Access Token
-   */
-  generateAccessToken(payload: JwtPayload): string {
-    return jwt.sign(payload, this.accessTokenSecret, {
-      expiresIn: this.accessTokenExpiry,
-      issuer: 'edulearn-auth-service',
-      audience: 'edulearn-platform',
-    });
-  }
+const verifyRefreshToken = (token: string): JwtPayload => {
+  return jwt.verify(token, process.env.JWT_REFRESH_SECRET as string) as JwtPayload;
+};
 
-  /**
-   * Generate Refresh Token
-   */
-  generateRefreshToken(payload: JwtPayload): string {
-    return jwt.sign(payload, this.refreshTokenSecret, {
-      expiresIn: this.refreshTokenExpiry,
-      issuer: 'edulearn-auth-service',
-      audience: 'edulearn-platform',
-    });
-  }
+const generateTokenPair = (payload: JwtPayload): TokenPair => {   // ← function add kiya
+  return {
+    accessToken: generateAccessToken(payload),
+    refreshToken: generateRefreshToken(payload),
+  };
+};
 
-  /**
-   * Generate Token Pair (Access + Refresh)
-   */
-  generateTokenPair(payload: JwtPayload): TokenPair {
-    return {
-      accessToken: this.generateAccessToken(payload),
-      refreshToken: this.generateRefreshToken(payload),
-    };
-  }
-
-  /**
-   * Verify Access Token
-   */
-  verifyAccessToken(token: string): JwtPayload {
-    try {
-      const decoded = jwt.verify(token, this.accessTokenSecret, {
-        issuer: 'edulearn-auth-service',
-        audience: 'edulearn-platform',
-      }) as JwtPayload;
-      
-      return decoded;
-    } catch (error) {
-      if (error instanceof jwt.TokenExpiredError) {
-        throw new Error('Access token expired');
-      }
-      if (error instanceof jwt.JsonWebTokenError) {
-        throw new Error('Invalid access token');
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Verify Refresh Token
-   */
-  verifyRefreshToken(token: string): JwtPayload {
-    try {
-      const decoded = jwt.verify(token, this.refreshTokenSecret, {
-        issuer: 'edulearn-auth-service',
-        audience: 'edulearn-platform',
-      }) as JwtPayload;
-      
-      return decoded;
-    } catch (error) {
-      if (error instanceof jwt.TokenExpiredError) {
-        throw new Error('Refresh token expired');
-      }
-      if (error instanceof jwt.JsonWebTokenError) {
-        throw new Error('Invalid refresh token');
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Decode token without verification (useful for expired token info)
-   */
-  decodeToken(token: string): JwtPayload | null {
-    try {
-      return jwt.decode(token) as JwtPayload;
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Get token expiry time
-   */
-  getTokenExpiry(token: string): Date | null {
-    const decoded = this.decodeToken(token);
-    if (!decoded || !decoded.exp) return null;
-    return new Date(decoded.exp * 1000);
-  }
-}
-
-export default new JwtHelper();
+export default {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyAccessToken,
+  verifyRefreshToken,
+  generateTokenPair,
+};

@@ -4,13 +4,14 @@ import authService from '../services/authService';
 import logger from '../utils/logger';
 
 class AuthController {
-  /**
-   * Register new user
-   */
+
+  /* =====================================================
+     REGISTER
+     ===================================================== */
   async register(req: Request, res: Response): Promise<void> {
     try {
-      // Validate input
       const errors = validationResult(req);
+
       if (!errors.isEmpty()) {
         res.status(400).json({
           success: false,
@@ -31,8 +32,10 @@ class AuthController {
           user: result.user.toJSON(),
         },
       });
+
     } catch (error) {
       logger.error('Register error:', error);
+
       res.status(400).json({
         success: false,
         message: error instanceof Error ? error.message : 'Registration failed',
@@ -40,9 +43,9 @@ class AuthController {
     }
   }
 
-  /**
-   * Verify email
-   */
+  /* =====================================================
+     VERIFY EMAIL
+     ===================================================== */
   async verifyEmail(req: Request, res: Response): Promise<void> {
     try {
       const { token } = req.body;
@@ -61,8 +64,10 @@ class AuthController {
         success: true,
         message: result.message,
       });
+
     } catch (error) {
       logger.error('Email verification error:', error);
+
       res.status(400).json({
         success: false,
         message: error instanceof Error ? error.message : 'Email verification failed',
@@ -70,12 +75,13 @@ class AuthController {
     }
   }
 
-  /**
-   * Login
-   */
+  /* =====================================================
+     LOGIN
+     ===================================================== */
   async login(req: Request, res: Response): Promise<void> {
     try {
       const errors = validationResult(req);
+
       if (!errors.isEmpty()) {
         res.status(400).json({
           success: false,
@@ -98,8 +104,10 @@ class AuthController {
           refreshToken: result.tokens.refreshToken,
         },
       });
+
     } catch (error) {
       logger.error('Login error:', error);
+
       res.status(401).json({
         success: false,
         message: error instanceof Error ? error.message : 'Login failed',
@@ -107,9 +115,9 @@ class AuthController {
     }
   }
 
-  /**
-   * Refresh token
-   */
+  /* =====================================================
+     REFRESH TOKEN
+     ===================================================== */
   async refreshToken(req: Request, res: Response): Promise<void> {
     try {
       const { refreshToken } = req.body;
@@ -127,13 +135,12 @@ class AuthController {
       res.status(200).json({
         success: true,
         message: 'Token refreshed successfully',
-        data: {
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-        },
+        data: tokens,
       });
+
     } catch (error) {
       logger.error('Refresh token error:', error);
+
       res.status(401).json({
         success: false,
         message: error instanceof Error ? error.message : 'Token refresh failed',
@@ -141,13 +148,14 @@ class AuthController {
     }
   }
 
-  /**
-   * Logout
-   */
+  /* =====================================================
+     LOGOUT
+     ===================================================== */
   async logout(req: Request, res: Response): Promise<void> {
     try {
       const { refreshToken } = req.body;
-      const userId = req.user?.userId;
+
+      const userId = (req as any).user?.userId;
 
       if (!userId) {
         res.status(401).json({
@@ -163,8 +171,10 @@ class AuthController {
         success: true,
         message: 'Logged out successfully',
       });
+
     } catch (error) {
       logger.error('Logout error:', error);
+
       res.status(400).json({
         success: false,
         message: error instanceof Error ? error.message : 'Logout failed',
@@ -172,9 +182,9 @@ class AuthController {
     }
   }
 
-  /**
-   * Request password reset
-   */
+  /* =====================================================
+     REQUEST PASSWORD RESET
+     ===================================================== */
   async requestPasswordReset(req: Request, res: Response): Promise<void> {
     try {
       const { email } = req.body;
@@ -193,8 +203,10 @@ class AuthController {
         success: true,
         message: result.message,
       });
+
     } catch (error) {
       logger.error('Password reset request error:', error);
+
       res.status(400).json({
         success: false,
         message: 'Failed to process password reset request',
@@ -202,9 +214,9 @@ class AuthController {
     }
   }
 
-  /**
-   * Reset password
-   */
+  /* =====================================================
+     RESET PASSWORD
+     ===================================================== */
   async resetPassword(req: Request, res: Response): Promise<void> {
     try {
       const { token, newPassword } = req.body;
@@ -223,8 +235,10 @@ class AuthController {
         success: true,
         message: result.message,
       });
+
     } catch (error) {
       logger.error('Password reset error:', error);
+
       res.status(400).json({
         success: false,
         message: error instanceof Error ? error.message : 'Password reset failed',
@@ -232,13 +246,13 @@ class AuthController {
     }
   }
 
-  /**
-   * Change password (for logged-in users)
-   */
+  /* =====================================================
+     CHANGE PASSWORD
+     ===================================================== */
   async changePassword(req: Request, res: Response): Promise<void> {
     try {
       const { currentPassword, newPassword } = req.body;
-      const userId = req.user?.userId;
+      const userId = (req as any).user?.userId;
 
       if (!userId) {
         res.status(401).json({
@@ -262,8 +276,10 @@ class AuthController {
         success: true,
         message: result.message,
       });
+
     } catch (error) {
       logger.error('Change password error:', error);
+
       res.status(400).json({
         success: false,
         message: error instanceof Error ? error.message : 'Password change failed',
@@ -271,12 +287,12 @@ class AuthController {
     }
   }
 
-  /**
-   * Get current user profile
-   */
+  /* =====================================================
+     GET PROFILE
+     ===================================================== */
   async getProfile(req: Request, res: Response): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = (req as any).user?.userId;
 
       if (!userId) {
         res.status(401).json({
@@ -294,8 +310,10 @@ class AuthController {
           user: user.toJSON(),
         },
       });
+
     } catch (error) {
       logger.error('Get profile error:', error);
+
       res.status(400).json({
         success: false,
         message: error instanceof Error ? error.message : 'Failed to fetch profile',
@@ -303,10 +321,10 @@ class AuthController {
     }
   }
 
-  /**
-   * Health check
-   */
-  async healthCheck(req: Request, res: Response): Promise<void> {
+  /* =====================================================
+     HEALTH CHECK
+     ===================================================== */
+  async healthCheck(_req: Request, res: Response): Promise<void> {
     res.status(200).json({
       success: true,
       message: 'Auth service is running',
