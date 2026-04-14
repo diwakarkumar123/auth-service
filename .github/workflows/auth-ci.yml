@@ -34,9 +34,10 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/auth-service:latest \
-                       -t ${{ secrets.DOCKER_USERNAME }}/auth-service:${{ github.sha }} .
-
+           docker build \
+                -t ${{ secrets.DOCKER_USERNAME }}/auth-service:latest \
+                -t ${{ secrets.DOCKER_USERNAME }}/auth-service:${{ github.sha }} \
+                  .
       - name: Push Docker image
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/auth-service:latest
